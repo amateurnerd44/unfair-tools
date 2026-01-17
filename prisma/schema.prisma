@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Sales Representative
+model SalesRep {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  territory String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+  customers Customer[]
+}
+
+// Customer/Retailer
+model Customer {
+  id             String   @id @default(cuid())
+  shopifyId      String?  @unique
+  name           String
+  email          String
+  phone          String?
+  shippingAddress Json?
+  billingAddress  Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  salesRepId String
+  salesRep   SalesRep @relation(fields: [salesRepId], references: [id])
+  orders     Order[]
+}
+
+// Product from Shopify
+model Product {
+  id          String   @id @default(cuid())
+  shopifyId   String   @unique
+  title       String
+  description String?
+  price       Float
+  sku         String?
+  imageUrl    String?
+  inventory   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+// Order
+model Order {
+  id              String   @id @default(cuid())
+  orderNumber     String   @unique
+  shopifyOrderId  String?  @unique
+  status          OrderStatus @default(DRAFT)
+  subtotal        Float
+  tax             Float    @default(0)
+  shipping        Float    @default(0)
+  total           Float
+  notes           String?
+  shippingAddress Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  salesRepId String
+  salesRep   SalesRep @relation(fields: [salesRepId], references: [id])
+  
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  items OrderItem[]
+}
+
+// Order Line Items
+model OrderItem {
+  id        String   @id @default(cuid())
+  quantity  Int
+  price     Float
+  subtotal  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderId String
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING
+  SUBMITTED
+  PROCESSING
+  FULFILLED
+  CANCELLED
+}
+
