@@ -40,6 +40,7 @@ model Customer {
   salesRepId String
   salesRep   SalesRep @relation(fields: [salesRepId], references: [id])
   orders     Order[]
+  callLogs   CallLog[]
 }
 
 // Product from Shopify
@@ -106,5 +107,28 @@ enum OrderStatus {
   PROCESSING
   FULFILLED
   CANCELLED
+}
+
+// Voice AI call logs
+model CallLog {
+  id              String   @id @default(cuid())
+  callSid         String   @unique
+  callerNumber    String
+  calledNumber    String
+  transcript      String
+  summary         String?
+  durationSeconds Int
+  status          String
+  createdAt       DateTime @default(now())
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+}
+
+enum CallStatus {
+  COMPLETED
+  FAILED
+  TRANSFERRED
+  TIMEOUT
 }
 
